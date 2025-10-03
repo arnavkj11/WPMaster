@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getRandomText } from '../utils/sampleTexts';
 import { calculateWPM, formatTime } from '../utils/calculations';
 import { useTypingStats } from '../hooks/useTypingStats';
+import { useAuth } from '../context/AuthContext';
+import { resultsAPI } from '../services/api';
 import Results from './Results';
 
 const TypingTest = () => {
@@ -20,6 +23,9 @@ const TypingTest = () => {
   const inputRef = useRef(null);
   const timerRef = useRef(null);
   const wpmTrackingRef = useRef(null);
+
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   // Use advanced stats tracking hook
   const stats = useTypingStats(isStarted, isFinished);
@@ -109,10 +115,31 @@ const TypingTest = () => {
   };
 
   // Handle test finish
-  const handleFinish = () => {
+  const handleFinish = async () => {
     setIsFinished(true);
     if (timerRef.current) {
       clearInterval(timerRef.current);
+    }
+
+    // Save result to backend if user is authenticated
+    if (isAuthenticated) {
+      try {
+        const timeElapsed = selectedDuration - timeLeft;
+        const finalWPM = calculateWPM(correctChars, timeElapsed);
+        const accuracy = Math.round((correctChars / totalChars) * 100) || 100;
+
+        await resultsAPI.saveResult({
+          wpm: finalWPM,
+          accuracy,
+          correctChars,
+          errors,
+          timeElapsed,
+          duration: selectedDuration,
+          peakWPM: stats.peakWPM
+        });
+      } catch (error) {
+        console.error('Failed to save result:', error);
+      }
     }
   };
 
@@ -183,13 +210,40 @@ const TypingTest = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-2xl p-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">Typing Speed Test</h1>
-          <p className="text-gray-600">Test your typing speed and accuracy</p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      {/* Top Navigation */}
+      <div className="max-w-6xl mx-auto mb-4 flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-gray-800">Typing Speed Test</h2>
+        <div className="flex gap-4">
+          {isAuthenticated ? (
+            <>
+              <button
+                onClick={() => navigate('/stats')}
+                className="px-4 py-2 bg-white text-indigo-600 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+              >
+                My Stats
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => navigate('/auth')}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+            >
+              Login / Register
+            </button>
+          )}
         </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto">
+        <div className="w-full bg-white rounded-2xl shadow-2xl p-8">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-800 mb-2">Test Your Speed</h1>
+            <p className="text-gray-600">
+              {isAuthenticated ? 'Your progress is being tracked!' : 'Login to save your results'}
+            </p>
+          </div>
 
         {/* Duration Selector */}
         <div className="flex justify-center gap-4 mb-6">
@@ -258,6 +312,7 @@ const TypingTest = () => {
           >
             Reset Test
           </button>
+        </div>
         </div>
       </div>
     </div>
