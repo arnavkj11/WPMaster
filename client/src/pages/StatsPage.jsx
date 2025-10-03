@@ -8,8 +8,13 @@ const StatsPage = () => {
   const [stats, setStats] = useState(null);
   const [recentResults, setRecentResults] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -52,12 +57,26 @@ const StatsPage = () => {
             <h1 className="text-4xl font-bold text-gray-800">Your Stats</h1>
             <p className="text-gray-600 mt-1">Welcome back, {user?.username}!</p>
           </div>
-          <button
-            onClick={() => navigate('/')}
-            className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
-          >
-            Take a Test
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => navigate('/')}
+              className="px-6 py-3 bg-white text-gray-700 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+            >
+              Home
+            </button>
+            <button
+              onClick={() => navigate('/test')}
+              className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+            >
+              Take a Test
+            </button>
+            <button
+              onClick={handleLogout}
+              className="px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors"
+            >
+              Logout
+            </button>
+          </div>
         </div>
 
         {/* Stats Overview */}

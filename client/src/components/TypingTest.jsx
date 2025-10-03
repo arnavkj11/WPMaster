@@ -24,8 +24,13 @@ const TypingTest = () => {
   const timerRef = useRef(null);
   const wpmTrackingRef = useRef(null);
 
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   // Use advanced stats tracking hook
   const stats = useTypingStats(isStarted, isFinished);
@@ -213,15 +218,30 @@ const TypingTest = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       {/* Top Navigation */}
       <div className="max-w-6xl mx-auto mb-4 flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-800">Typing Speed Test</h2>
-        <div className="flex gap-4">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate('/')}
+            className="px-4 py-2 bg-white text-gray-700 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+          >
+            ← Home
+          </button>
+          <h2 className="text-2xl font-bold text-gray-800">Typing Speed Test</h2>
+        </div>
+        <div className="flex gap-3 items-center">
           {isAuthenticated ? (
             <>
+              <span className="text-gray-700 font-medium">Hello, {user?.username}!</span>
               <button
                 onClick={() => navigate('/stats')}
                 className="px-4 py-2 bg-white text-indigo-600 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
               >
                 My Stats
+              </button>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors"
+              >
+                Logout
               </button>
             </>
           ) : (

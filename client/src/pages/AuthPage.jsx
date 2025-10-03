@@ -44,7 +44,7 @@ const AuthPage = () => {
       }
 
       if (result.success) {
-        navigate('/');
+        navigate('/test');
       } else {
         setError(result.error);
       }
