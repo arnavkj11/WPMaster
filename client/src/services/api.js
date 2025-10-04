@@ -87,4 +87,21 @@ export const resultsAPI = {
   }
 };
 
+// AI API
+export const aiAPI = {
+  generateText: async (difficulty, category, userErrors = []) => {
+    const response = await api.post('/ai/generate-text', {
+      difficulty,
+      category,
+      userErrors
+    });
+    return response.data;
+  },
+
+  analyzeErrors: async (performanceData) => {
+    const response = await api.post('/ai/analyze-errors', performanceData);
+    return response.data;
+  }
+};
+
 export default api;

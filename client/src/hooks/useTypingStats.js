@@ -11,6 +11,7 @@ export const useTypingStats = (isStarted, isFinished) => {
   const [mistakeMap, setMistakeMap] = useState({}); // { expectedChar: { typedChar: count } }
   const [currentAccuracy, setCurrentAccuracy] = useState(100);
   const [peakWPM, setPeakWPM] = useState(0);
+  const [keyPressData, setKeyPressData] = useState({}); // { key: { correct: count, errors: count } }
 
   const statsIntervalRef = useRef(null);
   const startTimeRef = useRef(null);
@@ -43,6 +44,15 @@ export const useTypingStats = (isStarted, isFinished) => {
     }
   };
 
+  // Record a correct keystroke
+  const recordCorrect = (char) => {
+    setKeyPressData(prev => {
+      const key = char.toLowerCase();
+      const data = prev[key] || { correct: 0, errors: 0 };
+      return { ...prev, [key]: { ...data, correct: data.correct + 1 } };
+    });
+  };
+
   // Record an error with position and characters
   const recordError = (position, expectedChar, typedChar) => {
     setErrorPositions(prev => [...prev, position]);
@@ -53,6 +63,13 @@ export const useTypingStats = (isStarted, isFinished) => {
       const mistakes = prev[key] || {};
       mistakes[typedChar] = (mistakes[typedChar] || 0) + 1;
       return { ...prev, [key]: mistakes };
+    });
+
+    // Track key press data for heatmap
+    setKeyPressData(prev => {
+      const key = expectedChar.toLowerCase();
+      const data = prev[key] || { correct: 0, errors: 0 };
+      return { ...prev, [key]: { ...data, errors: data.errors + 1 } };
     });
   };
 
@@ -87,6 +104,7 @@ export const useTypingStats = (isStarted, isFinished) => {
     setMistakeMap({});
     setCurrentAccuracy(100);
     setPeakWPM(0);
+    setKeyPressData({});
     startTimeRef.current = null;
   };
 
@@ -96,7 +114,9 @@ export const useTypingStats = (isStarted, isFinished) => {
     mistakeMap,
     currentAccuracy,
     peakWPM,
+    keyPressData,
     recordWPM,
+    recordCorrect,
     recordError,
     updateAccuracy,
     getCommonMistakes,

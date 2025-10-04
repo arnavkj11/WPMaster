@@ -6,10 +6,11 @@
  * @returns {number} WPM rounded to nearest integer
  */
 export const calculateWPM = (characters, timeInSeconds) => {
-  if (timeInSeconds === 0) return 0;
+  if (!characters || !timeInSeconds || timeInSeconds === 0 || isNaN(characters) || isNaN(timeInSeconds)) return 0;
   const minutes = timeInSeconds / 60;
   const words = characters / 5;
-  return Math.round(words / minutes);
+  const wpm = Math.round(words / minutes);
+  return isNaN(wpm) ? 0 : wpm;
 };
 
 /**
@@ -29,6 +30,9 @@ export const calculateAccuracy = (correctChars, totalChars) => {
  * @returns {string} Formatted time string
  */
 export const formatTime = (seconds) => {
+  if (isNaN(seconds) || seconds === null || seconds === undefined) {
+    return '00:00';
+  }
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;

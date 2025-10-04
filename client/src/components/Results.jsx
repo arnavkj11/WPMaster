@@ -1,5 +1,8 @@
+import { useState } from 'react';
 import { formatTime } from '../utils/calculations';
 import WPMChart from './WPMChart';
+import KeyboardHeatmap from './KeyboardHeatmap';
+import { aiAPI } from '../services/api';
 
 const Results = ({
   wpm,
@@ -10,8 +13,13 @@ const Results = ({
   onRestart,
   wpmHistory = [],
   commonMistakes = [],
-  peakWPM = 0
+  peakWPM = 0,
+  keyPressData = {},
+  difficulty = 'intermediate',
+  category = 'general'
 }) => {
+  const [aiFeedback, setAiFeedback] = useState('');
+  const [isLoadingFeedback, setIsLoadingFeedback] = useState(false);
   const getWPMRating = (wpm) => {
     if (wpm < 20) return { text: 'Beginner', color: 'text-red-600', bg: 'bg-red-50' };
     if (wpm < 40) return { text: 'Average', color: 'text-orange-600', bg: 'bg-orange-50' };
@@ -21,6 +29,31 @@ const Results = ({
   };
 
   const rating = getWPMRating(wpm);
+
+  const handleGenerateFeedback = async () => {
+    setIsLoadingFeedback(true);
+    try {
+      const response = await aiAPI.analyzeErrors({
+        wpm,
+        accuracy,
+        errors,
+        commonMistakes,
+        peakWPM,
+        timeElapsed,
+        difficulty,
+        category
+      });
+
+      if (response.success && response.feedback) {
+        setAiFeedback(response.feedback);
+      }
+    } catch (error) {
+      console.error('Failed to generate AI feedback:', error);
+      setAiFeedback('Failed to generate personalized feedback. Please try again.');
+    } finally {
+      setIsLoadingFeedback(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -112,6 +145,54 @@ const Results = ({
             </div>
           </div>
         )}
+
+        {/* Keyboard Heatmap */}
+        {Object.keys(keyPressData).length > 0 && (
+          <div className="mb-8">
+            <KeyboardHeatmap keyPressData={keyPressData} />
+          </div>
+        )}
+
+        {/* AI Personalized Feedback */}
+        <div className="mb-8">
+          {!aiFeedback ? (
+            <div className="text-center">
+              <button
+                onClick={handleGenerateFeedback}
+                disabled={isLoadingFeedback}
+                className={`px-8 py-4 rounded-lg font-semibold transition-all flex items-center gap-3 mx-auto ${
+                  isLoadingFeedback
+                    ? 'bg-gray-400 text-white cursor-wait'
+                    : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg'
+                }`}
+              >
+                {isLoadingFeedback ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Generating AI Feedback...
+                  </>
+                ) : (
+                  <>
+                    🤖 Get Personalized AI Feedback
+                  </>
+                )}
+              </button>
+            </div>
+          ) : (
+            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 border-2 border-indigo-200">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-3xl">🤖</span>
+                <h3 className="text-xl font-bold text-gray-800">AI Coach Feedback</h3>
+              </div>
+              <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
+                {aiFeedback}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Actions */}
         <div className="flex gap-4">
